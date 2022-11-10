@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-import sys
 
 import requests
 from bs4 import BeautifulSoup
@@ -40,19 +39,23 @@ def parse_page(url):
     return books_id
     True
 
-index = 0
-quantity = 10
+def main():
+    index = 0
+    quantity = 10
 
-for page in range(700):
-    if index >= quantity: break
-    url = f'https://tululu.org/l55/{page+ 1}/'
-    books = parse_page(url)
-
-    for book in books:
-        index += 1
-        book_file_url = f'https://tululu.org/txt.php?id={book}'
-        download_txt_file(book_file_url, index= index)
+    for page in range(700):
         if index >= quantity: break
+        url = f'https://tululu.org/l55/{page+ 1}/'
+        books = parse_page(url)
 
-print (" "*50, end='\r')
-print ('Job done')
+        for book in books:
+            index += 1
+            book_file_url = f'https://tululu.org/txt.php?id={book}'
+            download_txt_file(book_file_url, index= index)
+            if index >= quantity: break
+
+    print (" "*50, end='\r')
+    print ('Job done')
+
+if __name__ == '__main__':
+    main()
