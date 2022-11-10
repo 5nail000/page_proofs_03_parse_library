@@ -19,7 +19,7 @@ def download_txt_file(link, file_name = "", folder = 'books', index = False):
     with open(Path.cwd()/folder/file_name, 'wb') as file:
         file.write(response.content)
         print (" "*50, end='\r')
-        print (' %s   \r' % (file_name), end='\r')
+        print (' %s   \r' % file_name, end='\r')
         return True
 
 def parse_page(url):
