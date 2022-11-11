@@ -36,11 +36,12 @@ def parse_page(url):
     for item in results:
         book_title = item.find_all('td')[1].text
         book_author = item.find_all('td')[2].find('a').text
-        book_url = item.find('a').get("href")
+        book_url = f"https://tululu.org{item.find('a').get('href')}"
         book_id = book_url[2:-1]
         book_filename = f'{sanitize_filename(book_title)}({sanitize_filename(book_author)}).txt'
-        books_all.update({book_id : {'url': book_url, 'title': book_title, 'author': book_author, 'book_filename': book_filename}})
-        print (book_filename)
+        book_image = f"https://tululu.org{item.find('div', {'class': 'bookimage'}).find('img').get('src')}"
+        books_all.update({book_id : {'url': book_url, 'title': book_title, 'author': book_author, 'book_filename': book_filename, 'image': book_image}})
+        #print (book_url)
         True
     return books_all
     True
@@ -63,6 +64,8 @@ def main():
             book_file_url = f'https://tululu.org/txt.php?id={book}'
             file_name = '{:04d}_{}'.format(index, books[book]['book_filename'])
             download_txt_file(book_file_url, file_name= file_name)
+            file_name = f'{file_name[:-4]}.jpg'
+            download_txt_file(books[book]['image'], file_name= file_name, folder= 'images')
             if index >= quantity: break
 
     print (" "*50, end='\r')
