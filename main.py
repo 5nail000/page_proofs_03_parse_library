@@ -1,25 +1,31 @@
 import os
 from pathlib import Path
+from requests.exceptions import HTTPError
 
 import requests
+
 from bs4 import BeautifulSoup
 
 
 def download_txt_file(link, file_name = "", folder = 'books', index = False):
     response = requests.get(link)
     response.raise_for_status()
-    
-    os.makedirs(folder, exist_ok= True)
-    if len(file_name) < 1:
-        file_name = response.headers['Content-Disposition'].split('"')[1]
-        if index: 
-            file_name = '{:04d}_{}'.format(index, file_name)
-        
-    with open(Path.cwd()/folder/file_name, 'wb') as file:
-        file.write(response.content)
-        print (" "*50, end='\r')
-        print (' %s   \r' % file_name, end='\r')
-        return True
+    try:
+        check_for_redirect(response)
+    except HTTPError: 
+        True
+    else:
+        os.makedirs(folder, exist_ok= True)
+        if len(file_name) < 1:
+            file_name = response.headers['Content-Disposition'].split('"')[1]
+            if index: 
+                file_name = '{:04d}_{}'.format(index, file_name)
+            
+        with open(Path.cwd()/folder/file_name, 'wb') as file:
+            file.write(response.content)
+            print (" "*50, end='\r')
+            print (' %s   \r' % file_name, end='\r')
+            return True
 
 def parse_page(url):
     response = requests.get(url)
@@ -39,9 +45,13 @@ def parse_page(url):
     return books_id
     True
 
+def check_for_redirect(response):
+    if response.history: 
+        raise HTTPError
+
 def main():
     index = 0
-    quantity = 10
+    quantity = 20
 
     for page in range(700):
         if index >= quantity: break
