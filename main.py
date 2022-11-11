@@ -29,11 +29,7 @@ def download_txt_file(link, file_name = "", folder = 'books', index = False):
 
 def parse_page(url):
     response = requests.get(url)
-    response.raise_for_status()
-    
-    with open('filename.html', "w", encoding='utf_8') as file:
-        file.write(response.text)
-    
+    response.raise_for_status()    
     soup = BeautifulSoup (response.text, 'lxml')
     results = soup.find('div', {"id": "content"}).find_all('table')
     books_id = []
