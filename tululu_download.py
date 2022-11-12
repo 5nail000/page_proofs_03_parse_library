@@ -1,16 +1,26 @@
 from pathlib import Path
 from pathvalidate import sanitize_filename, replace_symbol
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, Timeout
 from bs4 import BeautifulSoup
 
 import argparse
 import requests
+import time
 import os
 
 
 def download_file(link, file_name, folder='books'):
-    response = requests.get(link)
-    response.raise_for_status()
+
+    read_again = True
+    while read_again:
+        try:
+            response = requests.get(link)
+            response.raise_for_status()            
+        except ConnectionError and HTTPError and Timeout:
+            time.sleep(2)
+        else:
+            read_again = False
+
     try:
         check_for_redirect(response)
     except HTTPError:
@@ -24,8 +34,17 @@ def download_file(link, file_name, folder='books'):
 
 
 def parse_comments(url):
-    response = requests.get(url)
-    response.raise_for_status()
+
+    read_again = True
+    while read_again:
+        try:
+            response = requests.get(url)
+            response.raise_for_status()            
+        except ConnectionError and HTTPError and Timeout:
+            time.sleep(2)
+        else:
+            read_again = False
+
     soup = BeautifulSoup(response.text, 'lxml')
     results = soup.find_all('div', {'class': 'texts'})
     
@@ -38,8 +57,17 @@ def parse_comments(url):
 
 
 def parse_book_page(url):
-    response = requests.get(url)
-    response.raise_for_status()
+
+    read_again = True
+    while read_again:
+        try:
+            response = requests.get(url)
+            response.raise_for_status()            
+        except ConnectionError and HTTPError and Timeout:
+            time.sleep(2)
+        else:
+            read_again = False
+
     soup = BeautifulSoup(response.text, 'lxml')
 
     book_url = url
@@ -71,8 +99,17 @@ def parse_book_page(url):
 
 
 def parse_page(url):
-    response = requests.get(url)
-    response.raise_for_status()
+    
+    read_again = True
+    while read_again:
+        try:
+            response = requests.get(url)
+            response.raise_for_status()            
+        except ConnectionError and HTTPError and Timeout:
+            time.sleep(2)
+        else:
+            read_again = False
+
     soup = BeautifulSoup(response.text, 'lxml')
     results = soup.find('div', {"id": "content"}).find_all('table')
     last_page = soup.find_all('a', {"class": "npage"})[-1].text
