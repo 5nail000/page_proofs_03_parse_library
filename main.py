@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from pathvalidate import sanitize_filename, replace_symbol
+from pathvalidate import sanitize_filename
 from requests.exceptions import HTTPError
 
 import requests
@@ -47,13 +47,19 @@ def parse_page(url):
     for item in results:
         book_title = item.find_all('td')[1].text
         book_author = item.find_all('td')[2].find('a').text
+
+        parse_genres = item.find_all('td')[3].find_all('a')
+        book_genre = []
+        for genre in parse_genres:
+            book_genre.append(genre.text)
+
         book_url = f"https://tululu.org{item.find('a').get('href')}"
         book_id = book_url[20:-1]
         book_filename = f'{sanitize_filename(book_title)}({sanitize_filename(book_author)}).txt'
         book_image = f"https://tululu.org{item.find('div', {'class': 'bookimage'}).find('img').get('src')}"
         book_comments = parse_comments(book_url)
-        books_all.update({book_id : {'url': book_url, 'title': book_title, 'author': book_author, 'book_filename': book_filename, 'image': book_image, 'comments': book_comments}})
-        #print (book_url)
+        books_all.update({book_id : {'url': book_url, 'title': book_title, 'author': book_author, 'book_filename': book_filename, 'image': book_image, 'comments': book_comments, 'genre': book_genre}})
+        print (book_genre)
         True
     return books_all
     True
