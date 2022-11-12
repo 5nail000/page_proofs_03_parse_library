@@ -1,11 +1,10 @@
-import os
 from pathlib import Path
-from pathvalidate import sanitize_filename
+from pathvalidate import sanitize_filename, replace_symbol
 from requests.exceptions import HTTPError
+from bs4 import BeautifulSoup
 
 import requests
-
-from bs4 import BeautifulSoup
+import os
 
 
 def download_txt_file(link, file_name, folder = 'books'):
@@ -35,6 +34,34 @@ def parse_comments(url):
         comments.append(comment)
     return comments
 
+
+def parse_book_page(url):
+    response = requests.get(url)
+    response.raise_for_status()    
+    soup = BeautifulSoup (response.text, 'lxml')
+
+    book_url = url
+    book_id = book_url[20:-1]
+    book_title = replace_symbol(soup.find('div', {"id": "content"}).find('h1').next)[:-2]
+    book_author = soup.find('div', {"id": "content"}).find('a').text
+
+    book_image = f"https://tululu.org{soup.find('div', {'class': 'bookimage'}).find('img').get('src')}"
+    
+    book_comments = []
+    comments = soup.find_all('div', {'class': 'texts'})
+    for item in comments:
+        comment = item.find('span', {'class': 'black'}).text
+        book_comments.append(comment)
+    
+    parse_genres = soup.find('span', {'class': 'd_book'}).find_all('a')
+    book_genre = []
+    for genre in parse_genres:
+        book_genre.append(genre.text)
+
+    return {'id': book_id, 'url': book_url, 'title': book_title, 'author': book_author, 'image': book_image, 'comments': book_comments, 'genre': book_genre}
+    True
+
+
 def parse_page(url):
     response = requests.get(url)
     response.raise_for_status()    
@@ -59,10 +86,9 @@ def parse_page(url):
         book_image = f"https://tululu.org{item.find('div', {'class': 'bookimage'}).find('img').get('src')}"
         book_comments = parse_comments(book_url)
         books_all.update({book_id : {'url': book_url, 'title': book_title, 'author': book_author, 'book_filename': book_filename, 'image': book_image, 'comments': book_comments, 'genre': book_genre}})
-        print (book_genre)
-        True
+
     return books_all
-    True
+
 
 def check_for_redirect(response):
     if response.history: 
@@ -91,4 +117,5 @@ def main():
     print ('Job done')
 
 if __name__ == '__main__':
+    
     main()
