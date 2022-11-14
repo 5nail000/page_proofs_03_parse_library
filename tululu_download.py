@@ -1,12 +1,13 @@
+import argparse
+import os
+import time
 from pathlib import Path
-from pathvalidate import sanitize_filename, replace_symbol
+
+import requests
 from requests.exceptions import HTTPError, Timeout
 from bs4 import BeautifulSoup
+from pathvalidate import sanitize_filename, replace_symbol
 
-import argparse
-import requests
-import time
-import os
 
 
 def download_file(link, file_name, folder='books'):
