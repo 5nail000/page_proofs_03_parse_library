@@ -195,7 +195,7 @@ def mass_download_books(start_id=1, end_id=100000000):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Download books from tululu')
     parser.add_argument("-start_id", help="start id", type=int, default=1)
     parser.add_argument("-end_id", help="end id", type=int, default=1)
     args = parser.parse_args()
