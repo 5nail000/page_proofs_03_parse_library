@@ -159,14 +159,13 @@ def mass_download_books(start_id=1, end_id=100000000):
         end_id = start_id
 
     index = 0
-    for page in range(100000000):
+    for page in range(1, 100000000):
 
-        current_page = 1 + page
-        url = f'https://tululu.org/l55/{current_page}/'
+        url = f'https://tululu.org/l55/{page}/'
         books = parse_page(url)
         if index >= end_id:
             break
-        if current_page >= books['last_page']:
+        if page >= books['last_page']:
             break
         books.pop('last_page')
 
@@ -190,7 +189,7 @@ def mass_download_books(start_id=1, end_id=100000000):
             if index >= end_id:
                 break
 
-    return True
+    print('Job done')
 
 
 if __name__ == '__main__':
@@ -203,5 +202,4 @@ if __name__ == '__main__':
     parser.add_argument("-end_id", help="end id", type=int, default=1)
     args = parser.parse_args()
 
-    if (mass_download_books(args.start_id, args.end_id)):
-        print('Job done')
+    mass_download_books(args.start_id, args.end_id)
