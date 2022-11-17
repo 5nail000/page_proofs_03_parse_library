@@ -1,16 +1,15 @@
 import argparse
 import os
-import time
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
-from requests.exceptions import HTTPError, Timeout
+from requests.exceptions import HTTPError
 
 
-def download_file(link, file_name, folder='books'):
-    response = send_request(link)
+def download_file(link, file_name, folder='books', params=None):
+    response = send_request(link, params=params)
     os.makedirs(folder, exist_ok=True)
     with open(Path.cwd()/folder/file_name, 'wb') as file:
         file.write(response.content)
@@ -18,39 +17,25 @@ def download_file(link, file_name, folder='books'):
 
 
 def parse_comments(response_text):
-
     soup = BeautifulSoup(response_text, 'lxml')
-    results = soup.find_all('div', {'class': 'texts'})
-
-    comments = []
-    for item in results:
-        comment = item.find('span', {'class': 'black'}).text
-        comments.append(comment)
-
-    return comments
+    comments = soup.find_all('div', {'class': 'texts'})
+    book_comments = [item.find('span', {'class': 'black'}).text for item in comments]
+    return book_comments
 
 
-def send_request(url):
-    read_again = True
-    while read_again:
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            check_for_redirect(response)
-        except ConnectionError and Timeout:
-            time.sleep(2)
-        except HTTPError:
-            return
-        else:
-            read_again = False
+def send_request(url, params=None):
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    check_for_redirect(response)
     return response
 
 
 def parse_book_page(url):
+    try:
+        response = send_request(url)
+    except HTTPError:
+        return {'is_redirected': True}
 
-    response = send_request(url)
-    if isinstance(response, type(None)):
-        return
     soup = BeautifulSoup(response.text, 'lxml')
 
     book_url = url
@@ -62,16 +47,11 @@ def parse_book_page(url):
     book_image = book_image.find('img').get('src')
     book_image = f"https://tululu.org{book_image}"
 
-    book_comments = []
     comments = soup.find_all('div', {'class': 'texts'})
-    for item in comments:
-        comment = item.find('span', {'class': 'black'}).text
-        book_comments.append(comment)
+    book_comments = [item.find('span', {'class': 'black'}).text for item in comments]
 
     parse_genres = soup.find('span', {'class': 'd_book'}).find_all('a')
-    book_genre = []
-    for genre in parse_genres:
-        book_genre.append(genre.text)
+    book_genre = [genre.text for genre in parse_genres]
 
     try:
         soup.find('a', {'href': f'/txt.php?id={book_id}'}).text
@@ -87,7 +67,8 @@ def parse_book_page(url):
             'image': book_image,
             'comments': book_comments,
             'genre': book_genre,
-            'is_txt': is_txt
+            'is_txt': is_txt,
+            'is_redirected': False
             }
 
 
@@ -107,11 +88,8 @@ def mass_download_books(start_id=1, end_id=100000000):
 
         url = f'https://tululu.org/b{id}/'
         book = parse_book_page(url)
-        if isinstance(book, type(None)):
+        if book['is_redirected']:
             continue
-
-        book_file_url = f'https://tululu.org/txt.php?id={book["id"]}'
-
         sanitize_book_title = sanitize_filename(book['title'])
         sanitize_book_author = sanitize_filename(book['author'])
         book_filename = f'{sanitize_book_title}({sanitize_book_author}).txt'
@@ -120,8 +98,9 @@ def mass_download_books(start_id=1, end_id=100000000):
         image_file = f'{file_name[:-4]}.jpg'
 
         if (book['is_txt']):
-            print(file_name)
-            download_file(book_file_url, file_name=file_name)
+            params = {'id': id}
+            book_file_url = 'https://tululu.org/txt.php'
+            download_file(book_file_url, file_name=file_name, params=params)
             download_file(book['image'], file_name=image_file, folder='images')
     print('Job done')
 
