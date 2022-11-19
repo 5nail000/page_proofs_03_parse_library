@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, ConnectionError
 
 
 def download_file(link, file_name, folder='books', params=None):
@@ -37,18 +37,17 @@ def parse_book_page(book_id, content):
 
     book_image = content.find('div', {'class': 'bookimage'})
     book_image = book_image.find('img').get('src')
-    book_image = urljoin('http://tululu.org', book_image)
+    book_image = urljoin(f'http://tululu.org/b{book_id}/', book_image)
 
     comments = content.find_all('div', {'class': 'texts'})
     book_comments = [item.find('span', {'class': 'black'}).text for item in comments]
 
-    parse_genres = content.find('span', {'class': 'd_book'}).find_all('a')
-    book_genre = [genre.text for genre in parse_genres]
+    genres = content.find('span', {'class': 'd_book'}).find_all('a')
+    book_genre = [genre.text for genre in genres]
 
+    is_txt = True
     if content.find('a', text='скачать txt') is None:
         is_txt = False
-    else:
-        is_txt = True
 
     return {'id': book_id,
             'title': book_title,
@@ -74,7 +73,7 @@ def download_many_books(start_id=1, end_id=100000000):
             url = f'https://tululu.org/b{book_id}/'
             response = send_request(url)
             check_for_redirect(response)
-        except HTTPError:
+        except (HTTPError, ConnectionError):
             continue
 
         book = parse_book_page(book_id, BeautifulSoup(response.text, 'lxml'))
