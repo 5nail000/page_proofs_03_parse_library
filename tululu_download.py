@@ -1,6 +1,7 @@
 import argparse
 import os
 from pathlib import Path
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -26,42 +27,30 @@ def parse_comments(response_text):
 def send_request(url, params=None):
     response = requests.get(url, params=params)
     response.raise_for_status()
-    check_for_redirect(response)
     return response
 
 
-def parse_book_page(url):
-    try:
-        response = send_request(url)
-    except HTTPError:
-        return {'is_redirected': True}
+def parse_book_page(book_id, content):
 
-    soup = BeautifulSoup(response.text, 'lxml')
+    book_title = content.find('div', {"id": "content"}).find('h1').next[:-8]
+    book_author = content.find('div', {"id": "content"}).find('a').text
 
-    book_url = url
-    book_id = book_url[20:-1]
-    book_title = soup.find('div', {"id": "content"}).find('h1').next[:-8]
-    book_author = soup.find('div', {"id": "content"}).find('a').text
-
-    book_image = soup.find('div', {'class': 'bookimage'})
+    book_image = content.find('div', {'class': 'bookimage'})
     book_image = book_image.find('img').get('src')
-    book_image = f"https://tululu.org{book_image}"
+    book_image = urljoin('http://tululu.org', book_image)
 
-    comments = soup.find_all('div', {'class': 'texts'})
+    comments = content.find_all('div', {'class': 'texts'})
     book_comments = [item.find('span', {'class': 'black'}).text for item in comments]
 
-    parse_genres = soup.find('span', {'class': 'd_book'}).find_all('a')
+    parse_genres = content.find('span', {'class': 'd_book'}).find_all('a')
     book_genre = [genre.text for genre in parse_genres]
 
-    try:
-        soup.find('a', {'href': f'/txt.php?id={book_id}'}).text
-    except AttributeError:
+    if content.find('a', text='скачать txt') is None:
         is_txt = False
     else:
         is_txt = True
 
     return {'id': book_id,
-            'url': book_url,
             'title': book_title,
             'author': book_author,
             'image': book_image,
@@ -77,32 +66,33 @@ def check_for_redirect(response):
         raise HTTPError
 
 
-def mass_download_books(start_id=1, end_id=100000000):
+def download_many_books(start_id=1, end_id=100000000):
 
-    if start_id < 1:
-        start_id = 1
-    if end_id < start_id:
-        end_id = start_id
+    for book_id in range(start_id, end_id+1):
 
-    for id in range(start_id, end_id+1):
-
-        url = f'https://tululu.org/b{id}/'
-        book = parse_book_page(url)
-        if book['is_redirected']:
+        try:
+            url = f'https://tululu.org/b{book_id}/'
+            response = send_request(url)
+            check_for_redirect(response)
+        except HTTPError:
             continue
-        sanitize_book_title = sanitize_filename(book['title'])
-        sanitize_book_author = sanitize_filename(book['author'])
-        book_filename = f'{sanitize_book_title}({sanitize_book_author}).txt'
 
-        file_name = '{:04d} - {}'.format(id, book_filename)
+        book = parse_book_page(book_id, BeautifulSoup(response.text, 'lxml'))
+
+        if not book['is_txt']:
+            continue
+
+        book_title = sanitize_filename(book['title'])
+        book_author = sanitize_filename(book['author'])
+        book_filename = f'{book_title}({book_author}).txt'
+
+        file_name = '{:04d} - {}'.format(book_id, book_filename)
         image_file = f'{file_name[:-4]}.jpg'
 
-        if (book['is_txt']):
-            params = {'id': id}
-            book_file_url = 'https://tululu.org/txt.php'
-            download_file(book_file_url, file_name=file_name, params=params)
-            download_file(book['image'], file_name=image_file, folder='images')
-    print('Job done')
+        params = {'id': book_id}
+        book_file_url = 'https://tululu.org/txt.php'
+        download_file(book_file_url, file_name=file_name, params=params)
+        download_file(book['image'], file_name=image_file, folder='images')
 
 
 if __name__ == '__main__':
@@ -115,4 +105,14 @@ if __name__ == '__main__':
     parser.add_argument("-end_id", help="end id", type=int, default=1)
     args = parser.parse_args()
 
-    mass_download_books(args.start_id, args.end_id)
+    if args.start_id < 1:
+        start_id = 1
+    else:
+        start_id = args.start_id
+
+    if args.end_id < start_id:
+        end_id = start_id
+    else:
+        end_id = args.end_id
+
+    download_many_books(1, 11)
