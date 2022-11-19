@@ -46,7 +46,7 @@ def parse_book_page(book_id, content):
     book_genre = [genre.text for genre in genres]
 
     is_txt = True
-    if content.find('a', text='скачать txt') is None:
+    if isinstance(content.find('a', text='скачать txt'), type(None)):
         is_txt = False
 
     return {'id': book_id,
@@ -114,4 +114,4 @@ if __name__ == '__main__':
     else:
         end_id = args.end_id
 
-    download_many_books(1, 11)
+    download_many_books(start_id, end_id)
