@@ -1,4 +1,6 @@
 import argparse
+import logging
+import time
 import os
 from pathlib import Path
 from urllib.parse import urljoin
@@ -10,11 +12,20 @@ from requests.exceptions import HTTPError, ConnectionError
 
 
 def download_file(link, file_name, folder='books', params=None):
-    response = send_request(link, params=params)
-    os.makedirs(folder, exist_ok=True)
-    with open(Path.cwd()/folder/file_name, 'wb') as file:
-        file.write(response.content)
-        return True
+
+    try:
+        response = send_request(link, params=params)
+    except HTTPError as err:
+        logging.info(err)
+        time.sleep(1)
+    except ConnectionError as err:
+        logging.error(err)
+        time.sleep(10)
+    else:
+        os.makedirs(folder, exist_ok=True)
+        with open(Path.cwd()/folder/file_name, 'wb') as file:
+            file.write(response.content)
+            return True
 
 
 def parse_comments(response_text):
@@ -27,6 +38,7 @@ def parse_comments(response_text):
 def send_request(url, params=None):
     response = requests.get(url, params=params)
     response.raise_for_status()
+    check_for_redirect(response, url)
     return response
 
 
@@ -43,7 +55,7 @@ def parse_book_page(book_id, content):
     book_comments = [item.find('span', {'class': 'black'}).text for item in comments]
 
     genres = content.find('span', {'class': 'd_book'}).find_all('a')
-    book_genre = [genre.text for genre in genres]
+    book_genres = [genre.text for genre in genres]
 
     is_txt = True
     if isinstance(content.find('a', text='скачать txt'), type(None)):
@@ -54,15 +66,18 @@ def parse_book_page(book_id, content):
             'author': book_author,
             'image': book_image,
             'comments': book_comments,
-            'genre': book_genre,
-            'is_txt': is_txt,
-            'is_redirected': False
+            'genre': book_genres,
+            'is_txt': is_txt
             }
 
 
-def check_for_redirect(response):
+def check_for_redirect(response, url):
     if response.history:
-        raise HTTPError
+        if response.history[0].status_code == 301:
+            True
+        if response.history[0].status_code == 302:
+            raise HTTPError(f'Redirectrd url: {url}')
+    True
 
 
 def download_many_books(start_id=1, end_id=100000000):
@@ -72,8 +87,13 @@ def download_many_books(start_id=1, end_id=100000000):
         try:
             url = f'https://tululu.org/b{book_id}/'
             response = send_request(url)
-            check_for_redirect(response)
-        except (HTTPError, ConnectionError):
+        except HTTPError as err:
+            logging.info(err)
+            time.sleep(1)
+            continue
+        except ConnectionError as err:
+            logging.error(err)
+            time.sleep(10)
             continue
 
         book = parse_book_page(book_id, BeautifulSoup(response.text, 'lxml'))
@@ -95,6 +115,8 @@ def download_many_books(start_id=1, end_id=100000000):
 
 
 if __name__ == '__main__':
+
+    logging.basicConfig(level=logging.ERROR, filename="tululu_log.log", filemode="w", format="%(asctime)s %(message)s")
 
     parser = argparse.ArgumentParser(
         prog='books downloader',
