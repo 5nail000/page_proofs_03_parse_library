@@ -16,7 +16,7 @@ def download_file(link, file_name, folder='books', params=None):
     try:
         response = send_request(link, params=params)
     except HTTPError as err:
-        logging.info(err)
+        logging.error(err)
         time.sleep(1)
     except ConnectionError as err:
         logging.error(err)
@@ -88,7 +88,7 @@ def download_many_books(start_id=1, end_id=100000000):
             url = f'https://tululu.org/b{book_id}/'
             response = send_request(url)
         except HTTPError as err:
-            logging.info(err)
+            logging.error(err)
             time.sleep(1)
             continue
         except ConnectionError as err:
@@ -116,7 +116,11 @@ def download_many_books(start_id=1, end_id=100000000):
 
 if __name__ == '__main__':
 
-    logging.basicConfig(level=logging.ERROR, filename="tululu_log.log", filemode="w", format="%(asctime)s %(message)s")
+    logging.basicConfig(level=logging.ERROR,
+                        filename="tululu_log.log",
+                        filemode="w",
+                        format="%(asctime)s: %(message)s"
+                        )
 
     parser = argparse.ArgumentParser(
         prog='books downloader',
