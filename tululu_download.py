@@ -119,7 +119,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.ERROR,
                         filename="tululu_log.log",
                         filemode="w",
-                        format="%(asctime)s: %(message)s"
+                        format="%(asctime)s - %(message)s",
+                        datefmt='%Y.%m.%d  %H:%M:%S'
                         )
 
     parser = argparse.ArgumentParser(
@@ -140,4 +141,4 @@ if __name__ == '__main__':
     else:
         end_id = args.end_id
 
-    download_many_books(start_id, end_id)
+    download_many_books(start_id, 10)
