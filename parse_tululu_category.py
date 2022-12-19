@@ -1,5 +1,7 @@
 import json
 import pathlib
+import argparse
+
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from pathvalidate import sanitize_filename
@@ -109,4 +111,17 @@ def download_books_by_genre(genre_id, pages=4, start=1):
 if __name__ == '__main__':
 
     genre_id = 55  # Научная фантастика
-    download_books_by_genre(genre_id)
+
+    parser = argparse.ArgumentParser(
+        prog='books downloader',
+        description='Download books from tululu'
+        )
+    parser.add_argument("--start_page", help="start page", type=int, default=1)
+    parser.add_argument("--end_page", help="end page", type=int, default=4)
+    args = parser.parse_args()
+
+    start_page = args.start_page
+    end_page = args.end_page
+    pages = end_page - start_page + 1
+
+    download_books_by_genre(genre_id, pages=pages, start=start_page)
