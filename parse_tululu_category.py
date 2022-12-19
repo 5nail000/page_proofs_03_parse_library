@@ -1,7 +1,9 @@
+import os
 import json
 import pathlib
 import argparse
 
+from pathlib import Path
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from pathvalidate import sanitize_filename
@@ -95,17 +97,29 @@ def parse_many_genre_pages(genre_id, pages=4, start=1):
 def download_books_by_genre(genre_id, pages=4, start=1):
 
     books = parse_many_genre_pages(genre_id, pages=pages, start=start)
+    global json_path
+    global skip_imgs
+    global skip_txt
+    global dest_folder
 
-    with open('parsed_books_data.json', 'w', encoding='utf_8') as file:
+    if dest_folder != "":
+        os.makedirs(dest_folder, exist_ok=True)
+    if json_path != "":
+        os.makedirs(Path.cwd()/dest_folder/json_path, exist_ok=True)
+
+    json_file = f'{Path.cwd()/dest_folder/json_path/"parsed_books_data.json"}'
+    with open(json_file, 'w', encoding='utf_8') as file:
         json.dump(books, file, indent=4, ensure_ascii=False)
 
-    for b in books.values():
-        filename = b['file_name']
-        image = b['image']
+    for book in books.values():
+        filename = book['file_name']
+        image = book['image']
         image_filename = ''.join([filename, pathlib.Path(image).suffix])
-        txt_file = b['file_url']
-        download_file(image, image_filename, folder='images')
-        download_file(txt_file, ''.join([filename, '.txt']), folder='books')
+        txt_file = book['file_url']
+        if not skip_imgs:
+            download_file(image, image_filename, folder=Path.cwd()/dest_folder/'images')
+        if not skip_txt:
+            download_file(txt_file, ''.join([filename, '.txt']), folder=Path.cwd()/dest_folder/'books')
 
 
 if __name__ == '__main__':
@@ -118,6 +132,11 @@ if __name__ == '__main__':
         )
     parser.add_argument("--start_page", help="start page", type=int, default=1)
     parser.add_argument("--end_page", help="end page", type=int, default=4)
+    parser.add_argument("--json_path", help="path for json-file", type=str, default='')
+    parser.add_argument("--skip_imgs", help="skip image-files", type=bool, default=False)
+    parser.add_argument("--skip_txt", help="skip txt-files", type=bool, default=False)
+    parser.add_argument("--dest_folder", help="folder for all downloads", type=str, default='downloads')
+
     args = parser.parse_args()
 
     start_page = args.start_page
@@ -125,5 +144,10 @@ if __name__ == '__main__':
     if end_page < start_page:
         end_page = start_page
     pages = end_page - start_page + 1
+
+    json_path = args.json_path
+    skip_imgs = args.skip_imgs
+    skip_txt = args.skip_txt
+    dest_folder = args.dest_folder
 
     download_books_by_genre(genre_id, pages=pages, start=start_page)
