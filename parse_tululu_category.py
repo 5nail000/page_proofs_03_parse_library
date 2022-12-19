@@ -122,6 +122,8 @@ if __name__ == '__main__':
 
     start_page = args.start_page
     end_page = args.end_page
+    if end_page < start_page:
+        end_page = start_page
     pages = end_page - start_page + 1
 
     download_books_by_genre(genre_id, pages=pages, start=start_page)
