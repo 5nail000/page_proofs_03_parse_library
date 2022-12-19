@@ -21,7 +21,7 @@ def get_genre_page(genre_id, page):
 
 def parse_book_file_url(html_page):
     soup = BeautifulSoup(html_page, 'lxml')
-    results = soup.find_all('a')
+    results = soup.select('a')
     for res in results:
         if 'скачать txt' in res:
             file_url = res.get('href')
@@ -33,8 +33,8 @@ def parse_book_file_url(html_page):
 def parse_genre_page(html_page):
 
     soup = BeautifulSoup(html_page, 'lxml')
-    results = soup.find('div', {"id": "content"}).find_all('table')
-    last_page = soup.find_all('a', {"class": "npage"})[-1].text
+    results = soup.select('#content table')
+    last_page = soup.select('a.npage')[-1].text
     books_all = {}
     for item in results:
         book_title = item.find_all('td')[1].text

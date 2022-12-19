@@ -30,8 +30,8 @@ def download_file(link, file_name, folder='books', params=None):
 
 def parse_comments(response_text):
     soup = BeautifulSoup(response_text, 'lxml')
-    comments = soup.find_all('div', {'class': 'texts'})
-    book_comments = [item.find('span', {'class': 'black'}).text for item in comments]
+    comments = soup.select('div.texts span.black')
+    book_comments = [item.text for item in comments]
     return book_comments
 
 
@@ -47,14 +47,13 @@ def parse_book_page(book_id, content):
     book_title = content.find('div', {"id": "content"}).find('h1').next[:-8]
     book_author = content.find('div', {"id": "content"}).find('a').text
 
-    book_image = content.find('div', {'class': 'bookimage'})
-    book_image = book_image.find('img').get('src')
+    book_image = content.select_one('div.bookimage img').get('src')
     book_image = urljoin(f'http://tululu.org/b{book_id}/', book_image)
 
-    comments = content.find_all('div', {'class': 'texts'})
-    book_comments = [item.find('span', {'class': 'black'}).text for item in comments]
+    comments = content.select('div.texts span.black')
+    book_comments = [item.text for item in comments]
 
-    genres = content.find('span', {'class': 'd_book'}).find_all('a')
+    genres = content.select('span.d_book a')
     book_genres = [genre.text for genre in genres]
 
     is_txt = True
