@@ -140,4 +140,4 @@ if __name__ == '__main__':
     else:
         end_id = args.end_id
 
-    download_many_books(start_id, 10)
+    download_many_books(start_id, end_id)
