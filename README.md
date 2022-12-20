@@ -12,11 +12,10 @@
 - Установите зависимости командой:
 ```
 pip install -r requirements.txt
-
+```
 
 ## Выгрузка книг по ID (файл tululu_download)
 
-```
 - Запустите скрипт командой: 
 ```
 py tululu_download.py
