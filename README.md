@@ -35,7 +35,6 @@ py tululu_download.py -start_id 2 -end_id 10
 
 ## Выгрузка всех книг в категории (файл parse_tululu_category)
 
-```
 - Запустите скрипт командой: 
 ```
 py parse_tululu_category.py
@@ -54,8 +53,6 @@ py parse_tululu_category.py
 ```
 python parse_tululu_category.py --start_page 700 --end_page 701 --skip_imgs True --json_path json
 ```
-
-
 
 ## Цели проекта
 
