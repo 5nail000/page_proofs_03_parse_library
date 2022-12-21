@@ -25,10 +25,10 @@ def get_genre_page(genre_id, page):
 
 def parse_book_file_url(html_page):
     soup = BeautifulSoup(html_page, 'lxml')
-    results = soup.select('a')
-    for res in results:
-        if 'скачать txt' in res:
-            file_url = res.get('href')
+    link_tags = soup.select('a')
+    for link in link_tags:
+        if 'скачать txt' in link:
+            file_url = link.get('href')
             return file_url
 
     return
@@ -80,16 +80,16 @@ def parse_many_genre_pages(genre_id, pages=4, start=1):
 
         all_books = {}
         soup = BeautifulSoup(html_page, 'lxml')
-        results = soup.select('#content table')
-        last_page = soup.select('a.npage')[-1].text
-        for each_book in results:
+        unparsed_books = soup.select('#content table')
+        for each_book in unparsed_books:
             parsed_book = parse_genre_page(each_book)
             if parsed_book:
                 all_books.update(parsed_book)
 
-        if current_page - start + 1 == pages:
-            next_page = False
+        last_page = soup.select('a.npage')[-1].text
         if current_page == last_page:
+            next_page = False
+        if current_page - start + 1 == pages:
             next_page = False
 
         current_page += 1
