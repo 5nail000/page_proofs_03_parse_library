@@ -65,8 +65,8 @@ def download_books_by_genre(
     if json_path != "":
         os.makedirs(Path.cwd()/dest_folder/json_path, exist_ok=True)
 
-    json_file = f'{Path.cwd()/dest_folder/json_path/"parsed_books_data.json"}'
-    with open(json_file, 'w', encoding='utf_8') as file:
+    json_filename = f'{Path.cwd()/dest_folder/json_path/"parsed_books_data.json"}'
+    with open(json_filename, 'w', encoding='utf_8') as file:
         json.dump(books, file, indent=4, ensure_ascii=False)
 
     for book in books.values():
