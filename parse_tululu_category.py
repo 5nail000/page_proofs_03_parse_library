@@ -133,8 +133,8 @@ if __name__ == '__main__':
     parser.add_argument("--start_page", help="start page", type=int, default=1)
     parser.add_argument("--end_page", help="end page", type=int, default=4)
     parser.add_argument("--json_path", help="path for json-file", type=str, default='')
-    parser.add_argument("--skip_imgs", help="skip image-files", type=bool, default=False)
-    parser.add_argument("--skip_txt", help="skip txt-files", type=bool, default=False)
+    parser.add_argument("--skip_imgs", help="skip image-files", action='store_true')
+    parser.add_argument("--skip_txt", help="skip txt-files", action='store_true')
     parser.add_argument("--dest_folder", help="folder for all downloads", type=str, default='downloads')
 
     args = parser.parse_args()
