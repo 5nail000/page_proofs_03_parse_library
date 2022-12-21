@@ -80,7 +80,9 @@ def parse_many_genre_pages(genre_id, pages=4, start=1):
     all_books = {}
     next_page = True
     while next_page:
-        html_page = get_genre_page(genre_id, current_page).text
+        url_genre_page = f'/l{genre_id}/{current_page}/'
+        url_genre_page = urljoin('https://tululu.org', url_genre_page)
+        html_page = send_request(url_genre_page).text
         books, last_page = parse_genre_page(html_page)
         all_books.update(books)
 
