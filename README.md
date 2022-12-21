@@ -50,7 +50,7 @@ py parse_tululu_category.py
 
 Пример запуска с определёными опциями. Сохранятся все книги перечня со страниц 700-701, без обложек, json-файл будет сохранён в папке 'json':
 ```
-python parse_tululu_category.py --start_page 700 --end_page 701 --skip_imgs --json_path json
+python parse_tululu_category.py --start_page 700 --end_page 701 --json_path json --skip_imgs
 ```
 
 ## Цели проекта
