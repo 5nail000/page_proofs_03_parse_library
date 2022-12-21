@@ -1,11 +1,12 @@
 import argparse
 import logging
+import requests
+import pathlib
 import time
 import os
+
 from pathlib import Path
 from urllib.parse import urljoin
-
-import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from requests.exceptions import HTTPError, ConnectionError
@@ -42,7 +43,12 @@ def send_request(url, params=None):
     return response
 
 
-def parse_book_page(book_id, content):
+def parse_book_page(html_page):
+
+    content = BeautifulSoup(html_page, 'lxml')
+
+    book_url = f"https://tululu.org{content.select_one('div.bookimage a').get('href')}"
+    book_id = int(book_url[20:-1])
 
     book_title = content.find('div', {"id": "content"}).find('h1').next[:-8]
     book_author = content.find('div', {"id": "content"}).find('a').text
@@ -56,18 +62,27 @@ def parse_book_page(book_id, content):
     genres = content.select('span.d_book a')
     book_genres = [genre.text for genre in genres]
 
-    is_txt = True
-    if isinstance(content.find('a', text='скачать txt'), type(None)):
-        is_txt = False
+    book_filename = f'{sanitize_filename(book_title)}({sanitize_filename(book_author)})'
+    book_filename = '{:05d} - {}'.format(book_id, book_filename)
 
-    return {'id': book_id,
-            'title': book_title,
-            'author': book_author,
-            'image': book_image,
-            'comments': book_comments,
-            'genre': book_genres,
-            'is_txt': is_txt
-            }
+    book_file_url = False
+    link_tags = content.select('a')
+    for link in link_tags:
+        if 'скачать txt' in link:
+            book_file_url = urljoin('http://tululu.org', link.get('href'))
+
+    if not book_file_url:
+        return
+
+    return {book_id: {'url': book_url,
+                      'title': book_title,
+                      'author': book_author,
+                      'file_name': book_filename,
+                      'file_url': book_file_url,
+                      'image': book_image,
+                      'comments': book_comments,
+                      'genre': book_genres
+                      }}
 
 
 def check_for_redirect(response, url):
@@ -82,7 +97,7 @@ def download_many_books(start_id=1, end_id=100000000):
 
         try:
             url = f'https://tululu.org/b{book_id}/'
-            response = send_request(url)
+            unparsed_book = send_request(url)
         except HTTPError as err:
             logging.error(err)
             time.sleep(1)
@@ -92,22 +107,19 @@ def download_many_books(start_id=1, end_id=100000000):
             time.sleep(10)
             continue
 
-        book = parse_book_page(book_id, BeautifulSoup(response.text, 'lxml'))
+        parsed_book = parse_book_page(unparsed_book.text)
 
-        if not book['is_txt']:
+        if not parsed_book:
             continue
 
-        book_title = sanitize_filename(book['title'])
-        book_author = sanitize_filename(book['author'])
-        book_filename = f'{book_title}({book_author}).txt'
+        filename = parsed_book[book_id]['file_name']
+        txt_link = parsed_book[book_id]['file_url']
+        txt_filename = f"{filename}.txt"
+        image_link = parsed_book[book_id]['image']
+        image_filename = ''.join([filename, pathlib.Path(image_link).suffix])
 
-        file_name = '{:04d} - {}'.format(book_id, book_filename)
-        image_file = f'{file_name[:-4]}.jpg'
-
-        params = {'id': book_id}
-        book_file_url = 'https://tululu.org/txt.php'
-        download_file(book_file_url, file_name=file_name, params=params)
-        download_file(book['image'], file_name=image_file, folder='images')
+        download_file(txt_link, file_name=txt_filename, folder='books')
+        download_file(image_link, file_name=image_filename, folder='images')
 
 
 if __name__ == '__main__':

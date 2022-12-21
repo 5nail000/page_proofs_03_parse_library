@@ -6,62 +6,12 @@ import argparse
 from pathlib import Path
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from pathvalidate import sanitize_filename
 
 from tululu_download import (
     send_request,
-    parse_comments,
+    parse_book_page,
     download_file
 )
-
-
-def get_genre_page(genre_id, page):
-    host = 'https://tululu.org'
-    url_genre_page = f'/l{genre_id}/{page}/'
-    url_genre_page = urljoin(host, url_genre_page)
-
-    return send_request(url_genre_page)
-
-
-def parse_book_file_url(html_page):
-    soup = BeautifulSoup(html_page, 'lxml')
-    link_tags = soup.select('a')
-    for link in link_tags:
-        if 'скачать txt' in link:
-            file_url = link.get('href')
-            return file_url
-
-    return
-
-
-def parse_genre_page(book_soup):
-
-    book_title = book_soup.find_all('td')[1].text
-    book_author = book_soup.find_all('td')[2].find('a').text
-    parse_genres = book_soup.find_all('td')[3].find_all('a')
-    book_genre = []
-    for genre in parse_genres:
-        book_genre.append(genre.text)
-    book_url = f"https://tululu.org{book_soup.find('a').get('href')}"
-    book_id = book_url[20:-1]
-    book_filename = f'{book_id}_{sanitize_filename(book_title)}({sanitize_filename(book_author)})'
-    book_image = f"https://tululu.org{book_soup.find('div', {'class': 'bookimage'}).find('img').get('src')}"
-    book_html_page = send_request(book_url).text
-    book_comments = parse_comments(book_html_page)
-
-    book_file_url = parse_book_file_url(book_html_page)
-    if not book_file_url:
-        return
-    book_file_url = urljoin('https://tululu.org', book_file_url)
-
-    return {book_id: {'url': book_url,
-                      'title': book_title,
-                      'author': book_author,
-                      'file_name': book_filename,
-                      'file_url': book_file_url,
-                      'image': book_image,
-                      'comments': book_comments,
-                      'genre': book_genre}}
 
 
 def parse_many_genre_pages(genre_id, pages=4, start=1):
@@ -80,9 +30,10 @@ def parse_many_genre_pages(genre_id, pages=4, start=1):
 
         all_books = {}
         soup = BeautifulSoup(html_page, 'lxml')
-        unparsed_books = soup.select('#content table')
-        for each_book in unparsed_books:
-            parsed_book = parse_genre_page(each_book)
+        book_urls = [book_href.get('href') for book_href in (soup.select('div.bookimage a'))]
+        for book in book_urls:
+            full_book_link = urljoin('https://tululu.org', book)
+            parsed_book = parse_book_page(send_request(full_book_link).text)
             if parsed_book:
                 all_books.update(parsed_book)
 
