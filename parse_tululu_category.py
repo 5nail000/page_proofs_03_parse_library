@@ -34,40 +34,34 @@ def parse_book_file_url(html_page):
     return
 
 
-def parse_genre_page(html_page):
+def parse_genre_page(book_soup):
 
-    soup = BeautifulSoup(html_page, 'lxml')
-    results = soup.select('#content table')
-    last_page = soup.select('a.npage')[-1].text
-    books_all = {}
-    for item in results:
-        book_title = item.find_all('td')[1].text
-        book_author = item.find_all('td')[2].find('a').text
-        parse_genres = item.find_all('td')[3].find_all('a')
-        book_genre = []
-        for genre in parse_genres:
-            book_genre.append(genre.text)
-        book_url = f"https://tululu.org{item.find('a').get('href')}"
-        book_id = book_url[20:-1]
-        book_filename = f'{book_id}_{sanitize_filename(book_title)}({sanitize_filename(book_author)})'
-        book_image = f"https://tululu.org{item.find('div', {'class': 'bookimage'}).find('img').get('src')}"
-        book_html_page = send_request(book_url).text
-        book_comments = parse_comments(book_html_page)
+    book_title = book_soup.find_all('td')[1].text
+    book_author = book_soup.find_all('td')[2].find('a').text
+    parse_genres = book_soup.find_all('td')[3].find_all('a')
+    book_genre = []
+    for genre in parse_genres:
+        book_genre.append(genre.text)
+    book_url = f"https://tululu.org{book_soup.find('a').get('href')}"
+    book_id = book_url[20:-1]
+    book_filename = f'{book_id}_{sanitize_filename(book_title)}({sanitize_filename(book_author)})'
+    book_image = f"https://tululu.org{book_soup.find('div', {'class': 'bookimage'}).find('img').get('src')}"
+    book_html_page = send_request(book_url).text
+    book_comments = parse_comments(book_html_page)
 
-        book_file_url = parse_book_file_url(book_html_page)
-        if not book_file_url:
-            continue
-        book_file_url = urljoin('https://tululu.org', book_file_url)
+    book_file_url = parse_book_file_url(book_html_page)
+    if not book_file_url:
+        return
+    book_file_url = urljoin('https://tululu.org', book_file_url)
 
-        books_all.update({book_id: {'url': book_url,
-                                    'title': book_title,
-                                    'author': book_author,
-                                    'file_name': book_filename,
-                                    'file_url': book_file_url,
-                                    'image': book_image,
-                                    'comments': book_comments,
-                                    'genre': book_genre}})
-    return books_all, last_page
+    return {book_id: {'url': book_url,
+                      'title': book_title,
+                      'author': book_author,
+                      'file_name': book_filename,
+                      'file_url': book_file_url,
+                      'image': book_image,
+                      'comments': book_comments,
+                      'genre': book_genre}}
 
 
 def parse_many_genre_pages(genre_id, pages=4, start=1):
@@ -83,8 +77,15 @@ def parse_many_genre_pages(genre_id, pages=4, start=1):
         url_genre_page = f'/l{genre_id}/{current_page}/'
         url_genre_page = urljoin('https://tululu.org', url_genre_page)
         html_page = send_request(url_genre_page).text
-        books, last_page = parse_genre_page(html_page)
-        all_books.update(books)
+
+        all_books = {}
+        soup = BeautifulSoup(html_page, 'lxml')
+        results = soup.select('#content table')
+        last_page = soup.select('a.npage')[-1].text
+        for each_book in results:
+            parsed_book = parse_genre_page(each_book)
+            if parsed_book:
+                all_books.update(parsed_book)
 
         if current_page - start + 1 == pages:
             next_page = False
