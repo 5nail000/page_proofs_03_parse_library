@@ -94,13 +94,17 @@ def parse_many_genre_pages(genre_id, pages=4, start=1):
     return all_books
 
 
-def download_books_by_genre(genre_id, pages=4, start=1):
+def download_books_by_genre(
+                            genre_id,
+                            json_path='',
+                            skip_imgs=False,
+                            skip_txt=False,
+                            dest_folder='downloads',
+                            pages=4,
+                            start=1
+                        ):
 
     books = parse_many_genre_pages(genre_id, pages=pages, start=start)
-    global json_path
-    global skip_imgs
-    global skip_txt
-    global dest_folder
 
     if dest_folder != "":
         os.makedirs(dest_folder, exist_ok=True)
@@ -145,9 +149,12 @@ if __name__ == '__main__':
         end_page = start_page
     pages = end_page - start_page + 1
 
-    json_path = args.json_path
-    skip_imgs = args.skip_imgs
-    skip_txt = args.skip_txt
-    dest_folder = args.dest_folder
-
-    download_books_by_genre(genre_id, pages=pages, start=start_page)
+    download_books_by_genre(
+        genre_id,
+        json_path=args.json_path,
+        skip_imgs=args.skip_imgs,
+        skip_txt=args.skip_txt,
+        dest_folder=args.dest_folder,
+        pages=pages,
+        start=start_page
+        )
