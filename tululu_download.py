@@ -71,8 +71,9 @@ def parse_book_page(book_id, content):
 
 
 def check_for_redirect(response, url):
-    if response.history[0].status_code == 302:
-        raise HTTPError(f'Redirectrd url: {url}')
+    if response.history:
+        if response.history[0].status_code == 302:
+            raise HTTPError(f'Redirectrd url: {url}')
 
 
 def download_many_books(start_id=1, end_id=100000000):
