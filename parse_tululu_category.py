@@ -17,10 +17,6 @@ from tululu_download import (
 def parse_many_genre_pages(genre_id, pages=4, start=1):
 
     current_page = start
-    if start < 1:
-        start = 1
-        current_page = 1
-
     all_books = {}
     next_page = True
     while next_page:
