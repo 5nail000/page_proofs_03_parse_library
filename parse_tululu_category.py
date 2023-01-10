@@ -46,7 +46,7 @@ def parse_many_genre_pages(genre_id, pages=4, start=1):
 
 def download_books_by_genre(
                             genre_id,
-                            json_path='',
+                            json_path=None,
                             skip_imgs=False,
                             skip_txt=False,
                             dest_folder='downloads',
@@ -56,9 +56,8 @@ def download_books_by_genre(
 
     books = parse_many_genre_pages(genre_id, pages=pages, start=start)
 
-    if dest_folder != "":
-        os.makedirs(dest_folder, exist_ok=True)
-    if json_path != "":
+    os.makedirs(dest_folder, exist_ok=True)
+    if json_path:
         os.makedirs(Path.cwd()/dest_folder/json_path, exist_ok=True)
 
     json_filename = f'{Path.cwd()/dest_folder/json_path/"parsed_books_data.json"}'
