@@ -1,11 +1,14 @@
 import os
 import json
+import time
+import logging
 import pathlib
 import argparse
 
 from pathlib import Path
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from requests.exceptions import HTTPError, ConnectionError
 
 from tululu_download import (
     send_request,
@@ -22,14 +25,35 @@ def parse_many_genre_pages(genre_id, pages=4, start=1):
     while next_page:
         url_genre_page = f'/l{genre_id}/{current_page}/'
         url_genre_page = urljoin('https://tululu.org', url_genre_page)
-        html_page = send_request(url_genre_page).text
+
+        try:
+            html_page = send_request(url_genre_page).text
+        except HTTPError as err:
+            logging.error(err)
+            time.sleep(1)
+            continue
+        except ConnectionError as err:
+            logging.error(err)
+            time.sleep(10)
+            continue
 
         all_books = {}
         soup = BeautifulSoup(html_page, 'lxml')
         book_urls = [book_href.get('href') for book_href in (soup.select('div.bookimage a'))]
         for book in book_urls:
             full_book_link = urljoin('https://tululu.org', book)
-            parsed_book = parse_book_page(send_request(full_book_link).text)
+
+            try:
+                parsed_book = parse_book_page(send_request(full_book_link).text)
+            except HTTPError as err:
+                logging.error(err)
+                time.sleep(1)
+                continue
+            except ConnectionError as err:
+                logging.error(err)
+                time.sleep(10)
+                continue
+
             if parsed_book:
                 all_books.update(parsed_book)
 
