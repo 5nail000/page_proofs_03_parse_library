@@ -54,7 +54,7 @@ def parse_book_page(html_page):
     book_author = content.find('div', {"id": "content"}).find('a').text
 
     book_image = content.select_one('div.bookimage img').get('src')
-    book_image = urljoin(f'http://tululu.org/b{book_id}/', book_image)
+    book_image = urljoin(f'https://tululu.org/b{book_id}/', book_image)
 
     comments = content.select('div.texts span.black')
     book_comments = [item.text for item in comments]
@@ -69,7 +69,7 @@ def parse_book_page(html_page):
     link_tags = content.select('a')
     for link in link_tags:
         if 'скачать txt' in link:
-            book_file_url = urljoin('http://tululu.org', link.get('href'))
+            book_file_url = urljoin('https://tululu.org', link.get('href'))
 
     if not book_file_url:
         return
@@ -87,8 +87,7 @@ def parse_book_page(html_page):
 
 def check_for_redirect(response, url):
     if response.history:
-        if response.history[0].status_code == 302:
-            raise HTTPError(f'Redirectrd url: {url}')
+        raise HTTPError(f'Redirectrd url: {url}')
 
 
 def download_many_books(start_id=1, end_id=100000000):
